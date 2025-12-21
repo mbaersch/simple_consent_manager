@@ -1,7 +1,7 @@
 /*******************************************************************************
  Simple Consent Manager
  Cookie-basiertes Consent Management f. Trackingcookies
- Version 0.9.6.1 vom 29.10.2020
+ Version 0.9.7.1 vom 21.12.2025
  M. Baersch, gandke marketing & software gmbh - www.gandke.de
 /*******************************************************************************/
 
@@ -49,7 +49,22 @@ window.mgmcConfig = {
   //mit uebergeben bzw. abgerufen werden kann. Optionen: "never" (kein Key), "consent" (erst ab erster Auswahl 
   //von Optionen), "always" (Cookie wird dann immer benoetigt) 
   mgmcManageKey       : "consent",
+
+  //Consent Ergebnis in den dataLayer ausgeben? Dann hier Eventnamen eintragen, sonst leer lassen 
+  mgmcDataLayerEvent  : "consent_ready",
+
+  //Google Consent Mode anhand Gruppenconsent setzen?
+  mgmcGcmEnabled      : true,
+
+  //Microsoft Consent Mode anhand Gruppenconsent setzen?
+  mgmcMscmEnabled     : true,
   
+  //Microsoft Clarity Consent Mode anhand Gruppenconsent setzen?
+  mgmcClcmEnabled     : true,
+  
+  //Welche Gruppe soll Marketing-Zustimmung im Consent Mode steuern?
+  mgmcGrpAdvertising  : "2",
+    
   //Inline-CSS normale Buttons
   mgmcButtonStyle     : "text-decoration:none; display:inline-block; padding:6px 15px; border:1px solid #444; color:#444; margin-right:1em; margin-bottom:10px;color:#333;background:#fff",
 
@@ -138,9 +153,33 @@ window.mgmcConfig = {
 /********************* ENDE SETUP **************************/
 
 
+
 function initConsent() {
+
   //Fuer Statusabfragen via getGroupConsent Cookiewerte lesen und global speichern
   getConsentCookie();
+
+  if (!window.mgmcConfig.cmInitialized) {
+    if (window.mgmcConfig.mgmcGcmEnabled === true) {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(['consent', 'default', {
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'analytics_storage': 'denied'
+      }]);
+    }    
+
+    if (window.mgmcConfig.mgmcMscmEnabled === true) {
+      window.uetq = window.uetq || [];
+      window.uetq.push('consent', 'default', { 'ad_storage': 'denied' });
+    }
+
+    window.mgmcConfig.cmInitialized = true;
+
+  }
+  handleDataLayer("DL: init");
+
   if ((window._consentInfo == "") && 
      (!window.mgmcConfig.mgmcOverrideParam || document.location.href.indexOf(window.mgmcConfig.mgmcOverrideParam) < 0))
     if ((document.location.pathname != window.mgmcConfig.mgmcPrivacyLink) && (document.location.pathname != window.mgmcConfig.mgmcImprintLink))
@@ -208,13 +247,17 @@ function saveConsent(cnsArray) {
   document.cookie = 'trk_consent=' + val + ';Expires=' +
     cExDate.toGMTString() + ';domain=' + getDomain() + ';path=/';
   getConsentCookie();  
-  if (cnsArray[0] != "") window.mgmcConfig.consentCallback(val != '0|');   
+  if (cnsArray[0] != "") {
+    handleDataLayer("DL: save"); 
+    window.mgmcConfig.consentCallback(val != '0|');
+  } 
 }
 
 function delConsentCookie() {
   document.cookie = "trk_consent=;max-age=0;domain=" + getDomain() + ";path=/;";
   getConsentCookie();
-  window.mgmcConfig.consentCallback(false);   
+  handleDataLayer("DL: del"); 
+  window.mgmcConfig.consentCallback(false);
 }
   
 function getConsentCookie() {
@@ -300,6 +343,51 @@ function getGroupConsent(marker) {
     return window._consentInfo.indexOf(':'+marker.toString()) >= 0;
 }
 
+function handleDataLayer(mrk) {
+  console.log(mrk);
+  if (window.mgmcConfig.mgmcGcmEnabled || window.mgmcConfig.mgmcMscmEnabled || window.mgmcConfig.mgmcClcmEnabled) {
+  var gcmAnalyticsConsent = getGroupConsent(1) ? "granted" : "denied",
+      gcmAdsConsent = getGroupConsent(window.mgmcConfig.mgmcGrpAdvertising) ? "granted" : "denied";
+
+    if (window.mgmcConfig.mgmcGcmEnabled === true) {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(['consent', 'update', {
+        'ad_storage': gcmAdsConsent,
+        'ad_user_data': gcmAdsConsent,
+        'ad_personalization': gcmAdsConsent,
+        'analytics_storage': gcmAnalyticsConsent
+      }]);
+    }
+    
+    if (window.mgmcConfig.mgmcMscmEnabled === true) {
+      window.uetq = window.uetq || [];
+      window.uetq.push('consent', 'update', { 'ad_storage': gcmAdsConsent});
+    }
+
+    if (window.mgmcConfig.mgmcClcmEnabled === true || typeof(window.clarity) === "function") {
+      window.clarity=window.clarity||function(){(window.clarity.q = window.clarity.q||[]).push(arguments)};
+      window.clarity('consentv2',{ 
+        ad_Storage: gcmAdsConsent, 
+        analytics_Storage: gcmAnalyticsConsent 
+      });
+    }
+
+  }
+
+  if (window.mgmcConfig.mgmcDataLayerEvent && window.mgmcConfig.mgmcDataLayerEvent != "") {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: window.mgmcConfig.mgmcDataLayerEvent,
+      consentInfo: {
+        tracking: getGroupConsent(1),
+        group2: getGroupConsent(2),
+        group3: getGroupConsent(3)
+      }     
+    });
+  }
+
+}
+
 function getGroupConsentDate(grp) {
   if (!window._consentInfo || window._consentInfo.indexOf(':'+grp.toString())<0) return "";
   var rs = ""
@@ -311,7 +399,6 @@ function getGroupConsentDate(grp) {
   });
   return rs;
 }   
-
 
 function buildConsentChoice() {
   var consentChoice = [];
