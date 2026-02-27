@@ -1,7 +1,16 @@
+    if (window.mgmcConfig.mgmcGcmEnabled === true) {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push(['consent', 'update', {
+        'ad_storage': gcmAdsConsent,
+        'ad_user_data': gcmAdsConsent,
+        'ad_personalization': gcmAdsConsent,
+        'analytics_storage': gcmAnalyticsConsent
+      }]);
+    }
 /*******************************************************************************
  Simple Consent Manager
  Cookie-basiertes Consent Management f. Trackingcookies
- Version 0.9.7.1 vom 21.12.2025
+ Version 0.9.8 vom 29.01.2026
  M. Baersch, gandke marketing & software gmbh - www.gandke.de
 /*******************************************************************************/
 
@@ -9,48 +18,31 @@
 window.mgmcConfig = {
   //Anzahl der Monate f. Consent Cookie
   mgmcConsentCookieMonths : 12,
-  
+
   //Version anpassen, wenn Consent neu eingeholt werden muss bei Aenderung des Umfangs
   mgmcConsentCookieVersion : 3,
-  
-  //Titel des Consent-Einstellungsdialogs
-  //mgmcConsentDialogTitle  : "Einstellungen zur Webanalyse",
-  mgmcConsentDialogTitle  : "Nutzung von Cookies & Diensten",
 
-  //Titel des "Minimal-Consent"-Buttons
-  mgmcConsentMinBtnTitle  : "Nur Notwendige",
-  
-  //Titel des "Consent-Buttons" bei einfachem Dialog
-  mgmcConsentOkBtnTitle   : "Cookies zulassen (Danke!)",
-  
   //Darstellungstyp. Optionen: overlay ("modal", zentriert), center, top, bottom
   mgmcConsentStyle          : "overlay",
-  
-  //optionale Fixierung per CSS (z. B. "100px" als Wert) vom oberen Rand 
-  //nur wirksam bei mgmcConsentStyle center bzw. overlay ("" = scrollbar) 
+
+  //optionale Fixierung per CSS (z. B. "100px" als Wert) vom oberen Rand
+  //nur wirksam bei mgmcConsentStyle center bzw. overlay ("" = scrollbar)
   mgmcConsentStyleFixCenterPos : "200px",
-  
+
   //Maximale Inhaltsbreite als CSS-Angabe bei "top" oder "bottom" als Stil
   mgmcConsentContentWidth : "600px",
-  
-  //Einleitungstext des Consent-Einstellungsdialogs - abstimmen mit Umfang / Gruppen!
-  mgmcConsentDialogIntro  : "Diese Website nutzt Cookies. Einige sind <b>erforderlich</b> f&uuml;r den Betrieb der Website. Andere dienen der <b>Statistik</b> und helfen dabei, diese Website und ihre Funktionen zu verbessern. Ja genau: hier werden bei Zustimmung Clarity sowie (serverseitig) Google Analytics und Piwik PRO genutzt.",
 
-  //URLs f. Links zu Datenschutz und Impressum
-  mgmcPrivacyLink     : '/datenschutz.html',
-  mgmcImprintLink     : '/impressum.html',
-  
-  //Parameter zum Uebergehen der Abfrage bei (neuen) Besuchern ohne Consent-Auswahl 
+  //Parameter zum Uebergehen der Abfrage bei (neuen) Besuchern ohne Consent-Auswahl
   //z. B. zum Abschalten der Abfrage auf Landingpages bei Paid Traffic.
   //Abschalten der automatischen Abfrage f. alle Seiten mit mgmcOverrideParam : '/';
   mgmcOverrideParam   : 'showconsentbanner=0',
 
-  //Steuert, ob der Consent Manager auch einen ID-Key f. jeden Browser erzeugt, der zu Dokumentationszwecken 
-  //mit uebergeben bzw. abgerufen werden kann. Optionen: "never" (kein Key), "consent" (erst ab erster Auswahl 
-  //von Optionen), "always" (Cookie wird dann immer benoetigt) 
+  //Steuert, ob der Consent Manager auch einen ID-Key f. jeden Browser erzeugt, der zu Dokumentationszwecken
+  //mit uebergeben bzw. abgerufen werden kann. Optionen: "never" (kein Key), "consent" (erst ab erster Auswahl
+  //von Optionen), "always" (Cookie wird dann immer benoetigt)
   mgmcManageKey       : "consent",
 
-  //Consent Ergebnis in den dataLayer ausgeben? Dann hier Eventnamen eintragen, sonst leer lassen 
+  //Consent Ergebnis in den dataLayer ausgeben? Dann hier Eventnamen eintragen, sonst leer lassen
   mgmcDataLayerEvent  : "consent_ready",
 
   //Google Consent Mode anhand Gruppenconsent setzen?
@@ -58,23 +50,38 @@ window.mgmcConfig = {
 
   //Microsoft Consent Mode anhand Gruppenconsent setzen?
   mgmcMscmEnabled     : true,
-  
+
   //Microsoft Clarity Consent Mode anhand Gruppenconsent setzen?
   mgmcClcmEnabled     : true,
-  
+
   //Welche Gruppe soll Marketing-Zustimmung im Consent Mode steuern?
   mgmcGrpAdvertising  : "2",
-    
-  //Inline-CSS normale Buttons
-  mgmcButtonStyle     : "text-decoration:none; display:inline-block; padding:6px 15px; border:1px solid #444; color:#444; margin-right:1em; margin-bottom:10px;color:#333;background:#fff",
 
-  //Inline-CSS fuer Default-Button
-  mgmcOkButtonStyle     : "text-decoration:none; display:inline-block; padding:6px 15px; border:1px solid #444; color:#444; margin-right:1em; margin-bottom:10px;color:#fff;background:#45650b",
+  //UI-Konfiguration: Texte, Styles und Links zentral verwalten
+  ui: {
+    dialogTitle: "Nutzung von Cookies & Diensten",
+    dialogIntro: "Diese Website nutzt Cookies. Einige sind <b>erforderlich</b> f&uuml;r den Betrieb der Website. Andere dienen der <b>Statistik</b> und helfen dabei, diese Website und ihre Funktionen zu verbessern. Ja genau: hier werden bei Zustimmung Clarity sowie (serverseitig) Google Analytics und Piwik PRO genutzt.",
+    buttons: {
+      minimal: "Nur Notwendige",
+      acceptAll: "Cookies zulassen (Danke!)",
+      saveSelection: "Auswahl speichern",
+      activateAll: "Alle aktivieren",
+      changeSelection: "Auswahl &auml;ndern",
+      deleteSettings: "Einstellung l&ouml;schen",
+      close: "Schlie&szlig;en"
+    },
+    buttonStyle: "text-decoration:none; display:inline-block; padding:6px 15px; border:1px solid #444; margin-right:1em; margin-bottom:10px; color:#333; background:#fff",
+    okButtonStyle: "text-decoration:none; display:inline-block; padding:6px 15px; border:1px solid #444; margin-right:1em; margin-bottom:10px; color:#fff; background:#45650b",
+    links: {
+      privacy: "/datenschutz.html",
+      imprint: "/impressum.html"
+    }
+  },
 
 
 /********************* COOKIE INFO TABELLEN **************************/
-  
-  //Cookies, die immer aktiviert sein sollen. "
+
+  //Cookies, die immer aktiviert sein sollen.
   essentialCookies : {
     'title'         : 'Erforderlich', 
     'description'   : 'Notwendig f&uuml;r den Betrieb der Website und Verwaltung der Zustimmung',
@@ -113,7 +120,7 @@ window.mgmcConfig = {
     ]  
   },
   
-  //Cookies der optionalen Gruppe 1: Per Vorgabe die Gruppe f. Werbung
+  //Cookies der optionalen Gruppe 2: Per Vorgabe die Gruppe f. Werbung
   //Bleibt inaktiv, wenn keine Items definiert wurden
   group2Cookies : {
     'enableDefault' : false, 
@@ -123,7 +130,7 @@ window.mgmcConfig = {
     'items' : [ ],  
   },
   
-  //Cookies der optionalen Gruppe 1: Per Vorgabe die Gruppe f. Externe Inhalte. 
+  //Cookies der optionalen Gruppe 3: Per Vorgabe die Gruppe f. Externe Inhalte. 
   //Bleibt inaktiv, wenn keine Items definiert wurden
   group3Cookies : {
     'title'        : 'Externe Inhalte', 
@@ -162,12 +169,13 @@ function initConsent() {
   if (!window.mgmcConfig.cmInitialized) {
     if (window.mgmcConfig.mgmcGcmEnabled === true) {
       window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push(['consent', 'default', {
+      if (!window.gtag) window.gtag = function(){dataLayer.push(arguments)};
+      gtag('consent', 'default', {
         'ad_storage': 'denied',
         'ad_user_data': 'denied',
         'ad_personalization': 'denied',
         'analytics_storage': 'denied'
-      }]);
+      });
     }    
 
     if (window.mgmcConfig.mgmcMscmEnabled === true) {
@@ -178,11 +186,11 @@ function initConsent() {
     window.mgmcConfig.cmInitialized = true;
 
   }
-  handleDataLayer("DL: init");
+  handleDataLayer();
 
-  if ((window._consentInfo == "") && 
+  if ((window._consentInfo == "") &&
      (!window.mgmcConfig.mgmcOverrideParam || document.location.href.indexOf(window.mgmcConfig.mgmcOverrideParam) < 0))
-    if ((document.location.pathname != window.mgmcConfig.mgmcPrivacyLink) && (document.location.pathname != window.mgmcConfig.mgmcImprintLink))
+    if ((document.location.pathname != window.mgmcConfig.ui.links.privacy) && (document.location.pathname != window.mgmcConfig.ui.links.imprint))
       window.addEventListener("load", function (e) {showHideConsentBanner(0);});
 }
 
@@ -196,15 +204,22 @@ function resetConsentBanner() {
 }   
 
 function getDomain() {
-  var hostName = window.location.href.split("://")[1].split("/")[0];
-  var domain = hostName;
-  if (hostName != null) {
-    var parts = hostName.split('.').reverse();
-    if (parts != null && parts.length > 1) {
-      domain = parts[1] + '.' + parts[0];
-    }
+  var hostname = window.location.hostname;
+  var parts = hostname.split('.').reverse();
+
+  // Domains wie "localhost" oder IP-Adressen direkt zurueckgeben
+  if (parts.length <= 1 || hostname.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+    return hostname;
   }
-  return '.'+domain;
+
+  // Sonderfaelle wie .co.uk, .gov.uk, etc.
+  var commonTLDs = ['co.uk', 'gov.uk', 'ac.uk', 'org.uk', 'com.au', 'co.nz'];
+  var root = parts[1] + '.' + parts[0];
+  if (commonTLDs.indexOf(root) >= 0 && parts.length > 2) {
+    return '.' + parts[2] + '.' + root;
+  }
+
+  return '.' + root;
 }
 
 
@@ -248,7 +263,7 @@ function saveConsent(cnsArray) {
     cExDate.toGMTString() + ';domain=' + getDomain() + ';path=/';
   getConsentCookie();  
   if (cnsArray[0] != "") {
-    handleDataLayer("DL: save"); 
+    handleDataLayer(); 
     window.mgmcConfig.consentCallback(val != '0|');
   } 
 }
@@ -256,7 +271,7 @@ function saveConsent(cnsArray) {
 function delConsentCookie() {
   document.cookie = "trk_consent=;max-age=0;domain=" + getDomain() + ";path=/;";
   getConsentCookie();
-  handleDataLayer("DL: del"); 
+  handleDataLayer(); 
   window.mgmcConfig.consentCallback(false);
 }
   
@@ -346,32 +361,35 @@ function getGroupConsent(marker) {
 function handleDataLayer(mrk) {
   console.log(mrk);
   if (window.mgmcConfig.mgmcGcmEnabled || window.mgmcConfig.mgmcMscmEnabled || window.mgmcConfig.mgmcClcmEnabled) {
-  var gcmAnalyticsConsent = getGroupConsent(1) ? "granted" : "denied",
-      gcmAdsConsent = getGroupConsent(window.mgmcConfig.mgmcGrpAdvertising) ? "granted" : "denied";
+    var gcmAnalyticsConsent = getGroupConsent(1) ? "granted" : "denied",
+        gcmAdsConsent = getGroupConsent(window.mgmcConfig.mgmcGrpAdvertising) ? "granted" : "denied";
 
-    if (window.mgmcConfig.mgmcGcmEnabled === true) {
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push(['consent', 'update', {
-        'ad_storage': gcmAdsConsent,
-        'ad_user_data': gcmAdsConsent,
-        'ad_personalization': gcmAdsConsent,
-        'analytics_storage': gcmAnalyticsConsent
-      }]);
-    }
-    
-    if (window.mgmcConfig.mgmcMscmEnabled === true) {
-      window.uetq = window.uetq || [];
-      window.uetq.push('consent', 'update', { 'ad_storage': gcmAdsConsent});
-    }
+    if (gcmAnalyticsConsent === "granted" || gcmAdsConsent === "granted") {
 
-    if (window.mgmcConfig.mgmcClcmEnabled === true || typeof(window.clarity) === "function") {
-      window.clarity=window.clarity||function(){(window.clarity.q = window.clarity.q||[]).push(arguments)};
-      window.clarity('consentv2',{ 
-        ad_Storage: gcmAdsConsent, 
-        analytics_Storage: gcmAnalyticsConsent 
-      });
-    }
+      if (window.mgmcConfig.mgmcGcmEnabled === true) {
+        window.dataLayer = window.dataLayer || [];
+        if (!window.gtag) window.gtag = function(){dataLayer.push(arguments)};
+        gtag('consent', 'update', {
+          'ad_storage': gcmAdsConsent,
+          'ad_user_data': gcmAdsConsent,
+          'ad_personalization': gcmAdsConsent,
+          'analytics_storage': gcmAnalyticsConsent
+        });
+      }
 
+      if (window.mgmcConfig.mgmcMscmEnabled === true) {
+        window.uetq = window.uetq || [];
+        window.uetq.push('consent', 'update', { 'ad_storage': gcmAdsConsent});
+      }
+
+      if (window.mgmcConfig.mgmcClcmEnabled === true || typeof(window.clarity) === "function") {
+        window.clarity=window.clarity||function(){(window.clarity.q=window.clarity.q||[]).push(arguments)};
+        window.clarity('consentv2',{
+          ad_Storage: gcmAdsConsent,
+          analytics_Storage: gcmAnalyticsConsent
+        });
+      }
+    }
   }
 
   if (window.mgmcConfig.mgmcDataLayerEvent && window.mgmcConfig.mgmcDataLayerEvent != "") {
@@ -382,10 +400,9 @@ function handleDataLayer(mrk) {
         tracking: getGroupConsent(1),
         group2: getGroupConsent(2),
         group3: getGroupConsent(3)
-      }     
+      }
     });
   }
-
 }
 
 function getGroupConsentDate(grp) {
@@ -496,22 +513,23 @@ function showHideConsentBanner(oid) {
     if (window.mgmcConfig.group2Cookies.items && window.mgmcConfig.group2Cookies.items.length > 0)
       checkBoxes += "  <input id='checkgrp2' type='checkbox' "+getCheckedStatus(group2Status, window.mgmcConfig.group2Cookies.enableDefault) + "> <label style='user-select:none;padding-right:1.5em' for='checkgrp2'>" + window.mgmcConfig.group2Cookies.title + "</label>";
     if (window.mgmcConfig.group3Cookies.items && window.mgmcConfig.group3Cookies.items.length > 0)
-      checkBoxes += "  <input id='checkgrp3' type='checkbox' "+getCheckedStatus(group3Status, window.mgmcConfig.group2Cookies.enableDefault) + "> <label style='user-select:none;padding-right:1.5em' for='checkgrp3'>" + window.mgmcConfig.group3Cookies.title + "</label>";
+      checkBoxes += "  <input id='checkgrp3' type='checkbox' "+getCheckedStatus(group3Status, window.mgmcConfig.group3Cookies.enableDefault) + "> <label style='user-select:none;padding-right:1.5em' for='checkgrp3'>" + window.mgmcConfig.group3Cookies.title + "</label>";
     checkBoxes += "</div>";
   }
   
-  var buttonsText = "<p style='margin-top:1em;float:right'><a style='"+window.mgmcConfig.mgmcButtonStyle+"' href=\'#\' class=\"noconsentlink\" onclick=\'saveConsent([0]); showHideConsentBanner("+oid+");return false;\'>"+window.mgmcConfig.mgmcConsentMinBtnTitle+"</a>";
-  
+  var ui = window.mgmcConfig.ui;
+  var buttonsText = "<p style='margin-top:1em;float:right'><a style='"+ui.buttonStyle+"' href='#' class=\"noconsentlink\" onclick='saveConsent([0]); showHideConsentBanner("+oid+");return false;'>"+ui.buttons.minimal+"</a>";
+
   if (hasMultiGroups) {
     //Button zum Speichern der Auswahl oder alle
-    buttonsText += " <a style='"+window.mgmcConfig.mgmcButtonStyle+"' href=\'#\' class=\"noconsentlink\" onclick=\'saveConsent(buildConsentChoice()); "+
-                   "showHideConsentBanner("+oid+"); return false;\'>Auswahl speichern</a>";
-    buttonsText += " <a style='"+window.mgmcConfig.mgmcOkButtonStyle+"' href=\'#\' class=\"consentlink\" onclick=\'saveConsent(buildConsentAll()); "+
-                   "showHideConsentBanner("+oid+"); return false;\'>Alle aktivieren</a></p>";
+    buttonsText += " <a style='"+ui.buttonStyle+"' href='#' class=\"noconsentlink\" onclick='saveConsent(buildConsentChoice()); "+
+                   "showHideConsentBanner("+oid+"); return false;'>"+ui.buttons.saveSelection+"</a>";
+    buttonsText += " <a style='"+ui.okButtonStyle+"' href='#' class=\"consentlink\" onclick='saveConsent(buildConsentAll()); "+
+                   "showHideConsentBanner("+oid+"); return false;'>"+ui.buttons.activateAll+"</a></p>";
   } else {
     //simple Variante ohne Checkboxen
-    buttonsText += " <a style='"+window.mgmcConfig.mgmcOkButtonStyle+"' href=\'#\' class=\"consentlink\" onclick=\'saveConsent([\""+window.mgmcConfig.trackingCookies.marker+"\"]); "+
-                   "showHideConsentBanner("+oid+"); return false;\'>"+window.mgmcConfig.mgmcConsentOkBtnTitle+"</a></p>";
+    buttonsText += " <a style='"+ui.okButtonStyle+"' href='#' class=\"consentlink\" onclick='saveConsent([\""+window.mgmcConfig.trackingCookies.marker+"\"]); "+
+                   "showHideConsentBanner("+oid+"); return false;'>"+ui.buttons.acceptAll+"</a></p>";
   }                 
 
   var CookieInfoTable = "<div class='mgmc-tablediv' style='margin:8px 0'><span id='mgmc-tblink'>&#9660; <a href='#' style='color:#444;font-size:0.9em'  onclick='document.getElementById(\"mgmc-cookie-table\").style.display=\"block\";document.getElementById(\"mgmc-tblink-close\").style.display=\"inline\";document.getElementById(\"mgmc-tblink\").style.display=\"none\";return false'>Cookie-Details anzeigen</a></span>";
@@ -524,7 +542,7 @@ function showHideConsentBanner(oid) {
 
   CookieInfoTable += "</table><span id='mgmc-tblink-close' style='display:none'>&#9650; <a href='#' style='color:#444;font-size:0.9em'  onclick='document.getElementById(\"mgmc-cookie-table\").style.display=\"none\";document.getElementById(\"mgmc-tblink\").style.display=\"initial\";document.getElementById(\"mgmc-tblink-close\").style.display=\"none\";return false'> 	Cookie-Details ausblenden</a></span></div>";
   
-  var footerText = "<div id=\"consent-footer\" style=\"clear:both;margin-top:1em; text-align:center;font-size:0.9em;border-top:1px solid #ccc; padding-top:1em\"><a style=\"color:#666;text-decoration:none\" href=\""+window.mgmcConfig.mgmcPrivacyLink+"\">Datenschutz</a> | <a style=\"color:#666;text-decoration:none\" href=\""+window.mgmcConfig.mgmcImprintLink+"\">Impressum</a></div>" ; 
+  var footerText = "<div id=\"consent-footer\" style=\"clear:both;margin-top:1em; text-align:center;font-size:0.9em;border-top:1px solid #ccc; padding-top:1em\"><a style=\"color:#666;text-decoration:none\" href=\""+ui.links.privacy+"\">Datenschutz</a> | <a style=\"color:#666;text-decoration:none\" href=\""+ui.links.imprint+"\">Impressum</a></div>" ; 
   
   var closeBtn = "<a class='mgmc-close-btn' style=\"color:#aaa;float:right;text-decoration:none;margin:10px;background:#fff;border-radius: 50%;padding:3px 12px;border:1px solid #e4e4e4\" onclick=\"showHideConsentBanner("+oid+"); return false;\" href=\"#\">X</a>";
 
@@ -536,7 +554,7 @@ function showHideConsentBanner(oid) {
     teaserText += closeBtn;
   teaserText += "<div class='mgmc-dlg-padding' style=\"padding:20px 20px 10px 20px;margin:0 auto; max-width:"+window.mgmcConfig.mgmcConsentContentWidth+";\">" ; 
 
-  var pp_txt = window.mgmcConfig.mgmcConsentDialogIntro + checkBoxes + CookieInfoTable + buttonsText + footerText ; 
+  var pp_txt = ui.dialogIntro + checkBoxes + CookieInfoTable + buttonsText + footerText ; 
 
   //Uebersicht der gegebenen bzw. blockierten (im Fall von Defaults) Zustimmungen
   var consentInfoText = '<h4>Aktuelle Auswahl</h4>' ;
@@ -562,15 +580,15 @@ function showHideConsentBanner(oid) {
     consentInfoText += '</p>';
   }
   
-  var delBtn = ((window._consentInfo != null) && (window._consentInfo != '')) ? "<a style='"+window.mgmcConfig.mgmcButtonStyle+"' href=\'#\'  onclick=\'showHideConsentBanner("+oid+"); delConsentCookie(); return false;\'>Einstellung l&ouml;schen</a>" : ""; 
-  
+  var delBtn = ((window._consentInfo != null) && (window._consentInfo != '')) ? "<a style='"+ui.buttonStyle+"' href='#' onclick='showHideConsentBanner("+oid+"); delConsentCookie(); return false;'>"+ui.buttons.deleteSettings+"</a>" : "";
+
   if (oid == 1) {
-    var orgBtnText = "<p style='margin-top:1em;float:right'>"+delBtn+"<a style='"+window.mgmcConfig.mgmcButtonStyle+"' href=\'#\'  onclick=\'showHideConsentBanner("+oid+"); showHideConsentBanner(0); return false;\'>Auswahl &auml;ndern</a> <a style='"+window.mgmcConfig.mgmcButtonStyle+"' href=\'#\' onclick=\'showHideConsentBanner("+oid+"); return false;\'>Schlie&szlig;en</a></p><div style=\"clear:both\"></div>" ;
-  
-    pp_txt = window.mgmcConfig.mgmcConsentDialogIntro + consentInfoText + CookieInfoTable + orgBtnText ; 
+    var orgBtnText = "<p style='margin-top:1em;float:right'>"+delBtn+"<a style='"+ui.buttonStyle+"' href='#' onclick='showHideConsentBanner("+oid+"); showHideConsentBanner(0); return false;'>"+ui.buttons.changeSelection+"</a> <a style='"+ui.buttonStyle+"' href='#' onclick='showHideConsentBanner("+oid+"); return false;'>"+ui.buttons.close+"</a></p><div style=\"clear:both\"></div>" ;
+
+    pp_txt = ui.dialogIntro + consentInfoText + CookieInfoTable + orgBtnText ;
   }
 
-  teaserText += "<h2>"+window.mgmcConfig.mgmcConsentDialogTitle+"</h2>\n";
+  teaserText += "<h2>"+ui.dialogTitle+"</h2>\n";
   teaserText += pp_txt + "</div></div>\n";
 
   el.innerHTML = teaserText;
@@ -579,13 +597,10 @@ function showHideConsentBanner(oid) {
   if (dl == null) {
     dl = document.createElement('div');
     dl.setAttribute('id','consent-overlay_vi');
-    styleElement(dl) ;
+    styleElement(dl);
     dl.style.background = "#222";
-    dl.style.filter = "alpha(opacity:80)";
-    dl.style.KhtmlOpacity = "0.8";
-    dl.style.MozOpacity = "0.8";
-    dl.style.opacity = "0.8"; 
-    dl.style.zIndex = "999";    
+    dl.style.opacity = "0.8";
+    dl.style.zIndex = "999";
     document.body.appendChild(dl);
   } 
 
