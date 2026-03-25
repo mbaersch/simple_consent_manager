@@ -1,12 +1,3 @@
-    if (window.mgmcConfig.mgmcGcmEnabled === true) {
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push(['consent', 'update', {
-        'ad_storage': gcmAdsConsent,
-        'ad_user_data': gcmAdsConsent,
-        'ad_personalization': gcmAdsConsent,
-        'analytics_storage': gcmAnalyticsConsent
-      }]);
-    }
 /*******************************************************************************
  Simple Consent Manager
  Cookie-basiertes Consent Management f. Trackingcookies
