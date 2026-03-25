@@ -1,16 +1,7 @@
-    if (window.mgmcConfig.mgmcGcmEnabled === true) {
-      window.dataLayer = window.dataLayer || [];
-      window.dataLayer.push(['consent', 'update', {
-        'ad_storage': gcmAdsConsent,
-        'ad_user_data': gcmAdsConsent,
-        'ad_personalization': gcmAdsConsent,
-        'analytics_storage': gcmAnalyticsConsent
-      }]);
-    }
 /*******************************************************************************
  Simple Consent Manager
  Cookie-basiertes Consent Management f. Trackingcookies
- Version 0.9.8 vom 29.01.2026
+ Version 0.9.8.1 vom 25.03.2026
  M. Baersch, gandke marketing & software gmbh - www.gandke.de
 /*******************************************************************************/
 
@@ -484,18 +475,21 @@ function showHideConsentBanner(oid) {
     el = document.createElement('div');
     el.setAttribute('id','consent-overlay');
     styleElement(el);
-    
-    //style anpassen...
-    if (window.mgmcConfig.mgmcConsentStyle != 'overlay')
-      el.style.height = "auto";
-    if (window.mgmcConfig.mgmcConsentStyle == 'top')
-      el.style.position = "fixed";
-    else if (window.mgmcConfig.mgmcConsentStyle == 'bottom') {
-      el.style.position = "fixed";
-      el.style.top = "unset";
-      el.style.bottom = 0;
-    }
     document.body.appendChild(el);
+  }
+
+  //Position bei jedem Einblenden setzen (nicht nur bei Erstellung)
+  if (window.mgmcConfig.mgmcConsentStyle == 'top') {
+    el.style.position = "fixed";
+    el.style.height = "auto";
+  } else if (window.mgmcConfig.mgmcConsentStyle == 'bottom') {
+    el.style.position = "fixed";
+    el.style.height = "auto";
+    el.style.top = "unset";
+    el.style.bottom = 0;
+  } else {
+    el.style.position = "absolute";
+    el.style.height = "100%";
   }
   
   getConsentCookie();
