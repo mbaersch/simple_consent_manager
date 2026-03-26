@@ -1,7 +1,7 @@
 /*******************************************************************************
  Simple Consent Manager
  Cookie-basiertes Consent Management f. Trackingcookies
- Version 0.9.8.1 vom 25.03.2026
+ Version 0.9.8.2 vom 26.03.2026
  M. Baersch, gandke marketing & software gmbh - www.gandke.de
 /*******************************************************************************/
 
@@ -124,6 +124,7 @@ window.mgmcConfig = {
   //Cookies der optionalen Gruppe 3: Per Vorgabe die Gruppe f. Externe Inhalte. 
   //Bleibt inaktiv, wenn keine Items definiert wurden
   group3Cookies : {
+    'enableDefault' : false,
     'title'        : 'Externe Inhalte', 
     'description' : 'Cookies f&uuml;r eingebettete Medien; z. B. YouTube-Videos oder Inhalte aus Sozialen Medien.',
     'marker'  : '3', 
@@ -251,7 +252,7 @@ function saveConsent(cnsArray) {
   
   var cExDate = new Date(+new Date() + 1000 * 60 * 60 * 24 * 30 * window.mgmcConfig.mgmcConsentCookieMonths);
   document.cookie = 'trk_consent=' + val + ';Expires=' +
-    cExDate.toGMTString() + ';domain=' + getDomain() + ';path=/';
+    cExDate.toUTCString() + ';domain=' + getDomain() + ';path=/;SameSite=Lax;Secure';
   getConsentCookie();  
   if (cnsArray[0] != "") {
     handleDataLayer(); 
@@ -260,7 +261,7 @@ function saveConsent(cnsArray) {
 }
 
 function delConsentCookie() {
-  document.cookie = "trk_consent=;max-age=0;domain=" + getDomain() + ";path=/;";
+  document.cookie = "trk_consent=;max-age=0;domain=" + getDomain() + ";path=/;SameSite=Lax;Secure";
   getConsentCookie();
   handleDataLayer(); 
   window.mgmcConfig.consentCallback(false);
@@ -349,10 +350,9 @@ function getGroupConsent(marker) {
     return window._consentInfo.indexOf(':'+marker.toString()) >= 0;
 }
 
-function handleDataLayer(mrk) {
-  console.log(mrk);
+function handleDataLayer() {
   if (window.mgmcConfig.mgmcGcmEnabled || window.mgmcConfig.mgmcMscmEnabled || window.mgmcConfig.mgmcClcmEnabled) {
-    var gcmAnalyticsConsent = getGroupConsent(1) ? "granted" : "denied",
+    var gcmAnalyticsConsent = getGroupConsent(window.mgmcConfig.trackingCookies.marker) ? "granted" : "denied",
         gcmAdsConsent = getGroupConsent(window.mgmcConfig.mgmcGrpAdvertising) ? "granted" : "denied";
 
     if (gcmAnalyticsConsent === "granted" || gcmAdsConsent === "granted") {
@@ -388,9 +388,9 @@ function handleDataLayer(mrk) {
     window.dataLayer.push({
       event: window.mgmcConfig.mgmcDataLayerEvent,
       consentInfo: {
-        tracking: getGroupConsent(1),
-        group2: getGroupConsent(2),
-        group3: getGroupConsent(3)
+        tracking: getGroupConsent(window.mgmcConfig.trackingCookies.marker),
+        group2: getGroupConsent(window.mgmcConfig.group2Cookies.marker),
+        group3: getGroupConsent(window.mgmcConfig.group3Cookies.marker)
       }
     });
   }
