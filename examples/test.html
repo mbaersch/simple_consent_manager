@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Simple Consent Manager - Demo</title>
+<style>
+  body { font-family: sans-serif; padding: 40px; max-width: 900px; margin: 0 auto; line-height: 1.5 }
+  h1 { color: #333 }
+  code { background: #f5f5f5; padding: 1px 5px; border-radius: 3px; font-size: 0.9em }
+  .modes a { display: inline-block; padding: 8px 14px; margin: 4px 6px 4px 0;
+             background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px;
+             text-decoration: none; color: #333 }
+  .modes a:hover { background: #e8e8e8 }
+  .note { background: #fffde7; padding: 10px 14px; border-left: 4px solid #fbc02d; margin: 1em 0 }
+</style>
+</head>
+<body>
+
+<h1>Simple Consent Manager - Demo</h1>
+
+<p>Diese Seite demonstriert beide Renderpfade von <code>mgm_consent.js</code> (ab v0.10.0).
+   Der Banner wird durch <code>initConsent()</code> beim Page-Load getriggert.</p>
+
+<h2>Modi</h2>
+<div class="modes">
+  <a href="?mode=default">Default (Single-Layer, v0.9.x-Look)</a>
+  <a href="?mode=twolayer">Two-Layer + InjectStyles + High z-index</a>
+  <a href="#" onclick="document.cookie='trk_consent=;max-age=0;path=/';location.reload();return false;">Consent zuruecksetzen + neu laden</a>
+</div>
+
+<p class="note">
+  Default-Modus rendert identisch zu v0.9.8 (Inline-Checkboxen, Toggle-Tabelle, alter X-Button-Stil).<br>
+  Two-Layer-Modus zeigt den schlanken First Layer; ueber "Individuelle Einstellungen" oeffnet sich der
+  Detail-Dialog mit Kategorie-Bloecken und Cookie-Tabelle.
+</p>
+
+<h2>DataLayer-Inspektion</h2>
+<p>Nach Auswahl im Browser-DevTools <code>console.log(window.dataLayer)</code> ausfuehren - im Two-Layer-Modus
+   sieht man die custom Keys <code>statistics</code> / <code>marketing</code> / <code>embedded</code>
+   im <code>consent_ready</code>-Event.</p>
+
+<p>Background-Filler:</p>
+<p style="height: 600px; background: #f5f5f5; padding: 20px">Lorem ipsum dolor sit amet ...</p>
+
+<script>
+  // Konfig-Patches abhaengig vom URL-Modus.
+  // Default-Konfig kommt unveraendert aus mgm_consent.js (window.mgmcConfig).
+  var mode = new URLSearchParams(location.search).get('mode') || 'default';
+</script>
+<script src="../mgm_consent.js"></script>
+<script>
+  if (mode === 'twolayer') {
+    // Opt-in Features aktivieren
+    window.mgmcConfig.mgmcUseTwoLayer = true;
+    window.mgmcConfig.mgmcInjectStyles = true;
+    window.mgmcConfig.mgmcZIndex = 99990;
+
+    // First-Layer-Texte
+    window.mgmcConfig.ui.firstLayerTitle = "Cookies & Dienste";
+    window.mgmcConfig.ui.firstLayerIntro = "Wenn Sie auf <em>Alle akzeptieren</em> klicken, stimmen Sie der Speicherung von Cookies zu.";
+    window.mgmcConfig.ui.buttons.openSettings = "Individuelle Einstellungen";
+
+    // Sprechende dataLayer-Keys
+    window.mgmcConfig.trackingCookies.dataLayerKey = "statistics";
+    window.mgmcConfig.group2Cookies.dataLayerKey  = "marketing";
+    window.mgmcConfig.group3Cookies.dataLayerKey  = "embedded";
+
+    // Demo-Item in group2, damit auch die Werbe-Kategorie angezeigt wird
+    window.mgmcConfig.group2Cookies.items = [
+      { name: "_gcl_au", domain: "example.de", desc: "Google Ads Cookie", expires: "89 Tage" }
+    ];
+  }
+
+  initConsent();
+</script>
+
+</body>
+</html>
