@@ -1,7 +1,7 @@
 /*******************************************************************************
  Simple Consent Manager
  Cookie-basiertes Consent Management f. Trackingcookies
- Version 0.10.0 vom 28.04.2026
+ Version 0.11.0 vom 01.07.2026
  M. Baersch, gandke marketing & software gmbh - www.gandke.de
 /*******************************************************************************/
 
@@ -64,6 +64,17 @@ window.mgmcConfig = {
   //Auf 99990 o. ae. erhoehen, falls die Seite einen sticky Header oder andere Stack-Contexte hat,
   //die das Banner sonst ueberlagern wuerden.
   mgmcZIndex          : 1000,
+
+  //OPT-IN: Banner verzoegert einblenden. Statt sofort beim Load erscheint das Banner erst bei
+  //der ersten Nutzer-Interaktion (Scroll/Wheel/Touch/Tastatur/Klick) und wird dabei sanft per
+  //CSS-Keyframe (~1s) eingeblendet. Der erste Link-Klick wird einmalig abgefangen, damit das
+  //Banner erscheint, bevor navigiert wird. Default false = unveraendertes Verhalten.
+  mgmcDelayedReveal   : false,
+
+  //OPT-IN: Auf schmalen Viewports (<=640px) das Banner am unteren Rand andocken statt an der
+  //berechneten Desktop-Position (per injizierter Media-Query, unabhaengig von mgmcInjectStyles).
+  //Default false = unveraendertes Verhalten.
+  mgmcMobileBottom    : false,
 
   //UI-Konfiguration: Texte, Styles und Links zentral verwalten
   ui: {
@@ -211,8 +222,45 @@ function initConsent() {
 
   if ((window._consentInfo == "") &&
      (!window.mgmcConfig.mgmcOverrideParam || document.location.href.indexOf(window.mgmcConfig.mgmcOverrideParam) < 0))
-    if ((document.location.pathname != window.mgmcConfig.ui.links.privacy) && (document.location.pathname != window.mgmcConfig.ui.links.imprint))
-      window.addEventListener("load", function (e) {showHideConsentBanner(0);});
+    if ((document.location.pathname != window.mgmcConfig.ui.links.privacy) && (document.location.pathname != window.mgmcConfig.ui.links.imprint)) {
+      if (window.mgmcConfig.mgmcDelayedReveal === true)
+        //Verzoegert: Banner erst bei erster Interaktion einblenden (siehe armConsentReveal)
+        armConsentReveal();
+      else
+        window.addEventListener("load", function (e) {showHideConsentBanner(0);});
+    }
+}
+
+/**
+ * OPT-IN (mgmcDelayedReveal): Zeigt das Consent-Banner verzoegert - erst bei der ersten
+ * Nutzer-Interaktion (Scroll, Wheel, Touch, Tastatur oder Klick-Versuch). Ein Klick auf
+ * einen Link wird beim ersten Mal abgefangen, damit das Banner sichtbar wird, bevor
+ * navigiert wird. So bleibt der Above-the-fold-Bereich beim Reinkommen zunaechst frei.
+ */
+function armConsentReveal() {
+  var armed = false;
+  function reveal() {
+    if (armed) return;
+    armed = true;
+    window.removeEventListener("scroll", reveal);
+    window.removeEventListener("wheel", reveal);
+    window.removeEventListener("touchstart", reveal);
+    window.removeEventListener("keydown", reveal);
+    document.removeEventListener("click", onClick, true);
+    showHideConsentBanner(0);
+  }
+  function onClick(ev) {
+    if (armed) return;
+    var t = ev.target;
+    var a = (t && t.closest) ? t.closest("a[href]") : null;
+    if (a) { ev.preventDefault(); ev.stopPropagation(); }
+    reveal();
+  }
+  window.addEventListener("scroll", reveal, { passive: true });
+  window.addEventListener("wheel", reveal, { passive: true });
+  window.addEventListener("touchstart", reveal, { passive: true });
+  window.addEventListener("keydown", reveal);
+  document.addEventListener("click", onClick, true);
 }
 
 function showConsentInfo() {
@@ -495,9 +543,49 @@ function injectMgmcStyles() {
   document.head.appendChild(style);
 }
 
+//Injiziert NUR die fuer mgmcDelayedReveal (Keyframe-Animationen) und mgmcMobileBottom
+//(Media-Query) benoetigten Regeln - unabhaengig von mgmcInjectStyles, damit Fade-in und
+//Mobil-Position auch ohne den grossen Tabellen-Style-Block funktionieren. Eigene <style>-ID,
+//damit es nicht mit injectMgmcStyles kollidiert.
+function injectMgmcRuntimeStyles() {
+  if (document.getElementById('mgmc-runtime-styles')) return;
+  var delayed = (window.mgmcConfig.mgmcDelayedReveal === true);
+  var mobile  = (window.mgmcConfig.mgmcMobileBottom === true);
+  if (!delayed && !mobile) return;
+  var css = "";
+  if (delayed) {
+    //Sanftes Einblenden ueber CSS-Keyframe-Animationen (per Klasse 'mgmc-anim' aktiviert):
+    //Banner faded, Box slidet, Dimmer faded. Animationen laufen zuverlaessig auch auf frisch
+    //ins DOM eingefuegten Elementen (anders als opacity-Transitions).
+    css +=
+      "@keyframes mgmcFadeIn{from{opacity:0}to{opacity:1}}"+
+      "@keyframes mgmcDimIn{from{opacity:0}to{opacity:0.8}}"+
+      "@keyframes mgmcSlideIn{from{transform:translateY(16px)}to{transform:translateY(0)}}"+
+      "#consent-overlay.mgmc-anim{animation:mgmcFadeIn 1s ease both}"+
+      "#consent-overlay_vi.mgmc-anim{animation:mgmcDimIn 1s ease both}"+
+      "#consent-overlay.mgmc-anim #consent-olinner{animation:mgmcSlideIn 1s ease both}";
+  }
+  if (mobile) {
+    //Mobil (<=640px): Banner unten andocken statt an der berechneten Desktop-Position.
+    //Ueberschreibt das overlay-Inline-CSS per !important; die JS-Positionierung fuer Desktop
+    //bleibt unveraendert und greift nur per Media-Query auf kleinen Viewports.
+    css +=
+      "@media (max-width:640px){"+
+        "#consent-fixoption{position:fixed !important;left:0 !important;right:0 !important;top:auto !important;bottom:0 !important;margin-top:0 !important;width:100% !important}"+
+        "#consent-olinner{margin:0 !important;max-width:100% !important;max-height:85vh !important;border-left:0 !important;border-right:0 !important}"+
+        "#consent-overlay .mgmc-dlg-padding{max-width:100% !important}"+
+      "}";
+  }
+  var style = document.createElement('style');
+  style.id = 'mgmc-runtime-styles';
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
 function showHideConsentBanner(oid) {
 
   if (window.mgmcConfig.mgmcInjectStyles === true) injectMgmcStyles();
+  injectMgmcRuntimeStyles();
 
   function getRealPageHeight(){
     var test1 = document.body.scrollHeight;
@@ -757,10 +845,30 @@ function showHideConsentBanner(oid) {
   if (ovZeigen === 'visible') {
     dl.style.height = getRealPageHeight()+'px';
   } ;
-  if (window.mgmcConfig.mgmcConsentStyle == 'overlay')
-	  dl.style.visibility = ovZeigen ;
-  else
-	  dl.style.visibility = 'hidden' ;
-	el.style.visibility = ovZeigen ;
+  var dimZeigen = (window.mgmcConfig.mgmcConsentStyle == 'overlay') ? ovZeigen : 'hidden';
+
+  if (window.mgmcConfig.mgmcDelayedReveal === true && ovZeigen === 'visible') {
+    //OPT-IN Fade-in (~1s) via Keyframe-Klasse 'mgmc-anim': Klasse entfernen, Reflow erzwingen,
+    //neu setzen, damit die Animation auch bei wiederholtem Oeffnen (Re-Open) erneut laeuft.
+    el.classList.remove('mgmc-anim');
+    dl.classList.remove('mgmc-anim');
+    void el.offsetWidth;
+    el.style.visibility = 'visible';
+    el.classList.add('mgmc-anim');
+    if (dimZeigen === 'visible') {
+      dl.style.opacity = '0.8';
+      dl.style.visibility = 'visible';
+      dl.classList.add('mgmc-anim');
+    } else {
+      dl.style.visibility = 'hidden';
+    }
+  } else {
+    dl.style.visibility = dimZeigen;
+    el.style.visibility = ovZeigen;
+    if (window.mgmcConfig.mgmcDelayedReveal === true) {
+      el.classList.remove('mgmc-anim');
+      dl.classList.remove('mgmc-anim');
+    }
+  }
   return (ovZeigen === 'visible') ;
 }

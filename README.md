@@ -15,6 +15,8 @@ There is a live example and documentation (in German language) for an older vers
 - **Optional CSS auto-injection** (`mgmcInjectStyles`): ready-to-use styles for cookie table (sticky header, fixed columns), category blocks and absolutely-positioned close button
 - **Configurable z-index** (`mgmcZIndex`): adjust for sites with sticky headers or other high stack contexts
 - **Per-group dataLayer keys** (`dataLayerKey`): rename `tracking`/`group2`/`group3` in the `consent_ready` event to project-specific names like `statistics`/`marketing`/`embedded`
+- **Optional delayed reveal + fade-in** (`mgmcDelayedReveal`): show the banner only on the first user interaction (scroll/wheel/touch/key/link click) with a soft ~1s CSS keyframe fade-in
+- **Optional mobile bottom docking** (`mgmcMobileBottom`): dock the banner to the bottom edge on narrow viewports (≤640px) via an injected media query
 - Optionally pushes consent to dataLayer
 - Supports Google Consent Mode v2, MS UET Consent Mode, MS Clarity Consent Mode
 - Robust domain detection (handles localhost, IPs, special TLDs like .co.uk)
@@ -79,6 +81,14 @@ If a dataLayer event name is defined (default: `consent_ready`), a push with all
 - `resetConsentBanner()` - Remove banner from DOM
 
 ## Changelog
+### v0.11.0 (2026-07-01)
+**New opt-in features (both default `false`, previous behavior unchanged):**
+- `mgmcDelayedReveal` (default `false`): when `true`, the banner is no longer shown immediately on load. Instead `armConsentReveal()` waits for the first user interaction (scroll/wheel/touch/keydown or a link click) and then reveals the banner with a soft ~1s CSS keyframe fade-in (overlay fades, inner box slides up, dimmer fades). The first link click is suppressed once so the banner appears before navigation. The animation replays on every re-open.
+- `mgmcMobileBottom` (default `false`): when `true`, an injected media query docks the banner to the bottom edge on viewports ≤640px, overriding the desktop inline positioning via `!important`. Desktop positioning is untouched.
+- Both features inject only the CSS rules they need via a separate `<style id="mgmc-runtime-styles">` block, **independent of `mgmcInjectStyles`** — so fade-in and mobile docking work without the full table-styling block.
+
+Ported from the gandke.de instance (originally `0.9.8.3-gandke.x`), reworked as clean opt-in flags on top of the canonical two-layer implementation.
+
 ### v0.10.0 (2026-04-28)
 **New opt-in features (all defaults preserve previous behavior, no migration needed):**
 - `mgmcUseTwoLayer` (default `false`): when `true`, `oid=0` renders a slim first-layer banner; the new `oid=2` opens the detail dialog with category blocks and the cookie table. Settings link transitions via `showHideConsentBanner(0); showHideConsentBanner(2);`.
@@ -104,4 +114,4 @@ If a dataLayer event name is defined (default: `consent_ready`), a push with all
 - Previous stable version
 
 ---
-*Letzte Aktualisierung: 2026-04-28 13:30*
+*Letzte Aktualisierung: 2026-07-01 19:55*

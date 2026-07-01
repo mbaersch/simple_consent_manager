@@ -18,13 +18,15 @@
 
 <h1>Simple Consent Manager - Demo</h1>
 
-<p>Diese Seite demonstriert beide Renderpfade von <code>mgm_consent.js</code> (ab v0.10.0).
+<p>Diese Seite demonstriert die Renderpfade von <code>mgm_consent.js</code> (ab v0.11.0).
    Der Banner wird durch <code>initConsent()</code> beim Page-Load getriggert.</p>
 
 <h2>Modi</h2>
 <div class="modes">
   <a href="?mode=default">Default (Single-Layer, v0.9.x-Look)</a>
   <a href="?mode=twolayer">Two-Layer + InjectStyles + High z-index</a>
+  <a href="?mode=reveal">Delayed Reveal + Fade-in (v0.11.0)</a>
+  <a href="?mode=mobile">Mobile-Bottom &le;640px (v0.11.0)</a>
   <a href="#" onclick="document.cookie='trk_consent=;max-age=0;path=/';location.reload();return false;">Consent zuruecksetzen + neu laden</a>
 </div>
 
@@ -69,6 +71,17 @@
     window.mgmcConfig.group2Cookies.items = [
       { name: "_gcl_au", domain: "example.de", desc: "Google Ads Cookie", expires: "89 Tage" }
     ];
+  }
+
+  if (mode === 'reveal') {
+    // Verzoegerte Anzeige + Fade-in. Bewusst OHNE mgmcInjectStyles, um zu zeigen, dass die
+    // Keyframes eigenstaendig injiziert werden. Banner erscheint erst bei Interaktion.
+    window.mgmcConfig.mgmcDelayedReveal = true;
+  }
+  if (mode === 'mobile') {
+    // Banner bei <=640px am unteren Rand. Ebenfalls OHNE mgmcInjectStyles.
+    // Zum Testen: Browserfenster auf <=640px verkleinern bzw. DevTools-Device-Mode.
+    window.mgmcConfig.mgmcMobileBottom = true;
   }
 
   initConsent();
