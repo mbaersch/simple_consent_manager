@@ -81,6 +81,24 @@ If a dataLayer event name is defined (default: `consent_ready`), a push with all
 - `resetConsentBanner()` - Remove banner from DOM
 
 ## Changelog
+### v0.11.1 (2026-08-28)
+**Bugfix — a "reject all" decision was silently swallowed:**
+- `saveConsent()` guarded its final block with `cnsArray[0] != ""`. The reject
+  button calls `saveConsent([0])` with the **number** `0`, and `0 != ""`
+  evaluates to `false` — so neither `handleDataLayer()` nor `consentCallback()`
+  ran on a rejection. No Consent Mode update, no revoke handler, no dataLayer
+  event. Now compared strictly, so only the reset call `saveConsent([""])`
+  skips the block.
+- The value handed to `consentCallback()` was `val != '0|'`. By that point the
+  consent key and cookie version are already appended to `val`, so it is never
+  exactly `'0|'` and the callback always received `true` — including on a
+  rejection. Integrations that act on that parameter alone would have enabled
+  tracking after a rejection. It is now derived from `allOff`.
+
+> **Behavior change:** `consentCallback(ok)` now receives `false` when the
+> visitor rejects everything. Previously it always received `true`. Callbacks
+> that additionally check `getGroupConsent()` are unaffected.
+
 ### v0.11.0 (2026-07-01)
 **New opt-in features (both default `false`, previous behavior unchanged):**
 - `mgmcDelayedReveal` (default `false`): when `true`, the banner is no longer shown immediately on load. Instead `armConsentReveal()` waits for the first user interaction (scroll/wheel/touch/keydown or a link click) and then reveals the banner with a soft ~1s CSS keyframe fade-in (overlay fades, inner box slides up, dimmer fades). The first link click is suppressed once so the banner appears before navigation. The animation replays on every re-open.
@@ -114,4 +132,4 @@ Ported from the gandke.de instance (originally `0.9.8.3-gandke.x`), reworked as 
 - Previous stable version
 
 ---
-*Letzte Aktualisierung: 2026-07-01 19:55*
+*Letzte Aktualisierung: 2026-08-28 12:10*

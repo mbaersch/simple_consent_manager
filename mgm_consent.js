@@ -1,7 +1,7 @@
 /*******************************************************************************
  Simple Consent Manager
  Cookie-basiertes Consent Management f. Trackingcookies
- Version 0.11.0 vom 01.07.2026
+ Version 0.11.1 vom 28.08.2026
  M. Baersch, gandke marketing & software gmbh - www.gandke.de
 /*******************************************************************************/
 
@@ -331,9 +331,16 @@ function saveConsent(cnsArray) {
   document.cookie = 'trk_consent=' + val + ';Expires=' +
     cExDate.toUTCString() + ';domain=' + getDomain() + ';path=/;SameSite=Lax;Secure';
   getConsentCookie();
-  if (cnsArray[0] != "") {
+  // Strikt vergleichen: bei "alles ablehnen" ist cnsArray[0] die Zahl 0, und
+  // 0 != "" ergibt false — handleDataLayer() und der Callback blieben dann
+  // aus, obwohl eine Entscheidung getroffen wurde. Nur der Reset-Aufruf
+  // saveConsent([""]) soll den Block ueberspringen.
+  if (cnsArray[0] !== "") {
     handleDataLayer();
-    window.mgmcConfig.consentCallback(val != '0|');
+    // Nicht gegen val pruefen: dort haengen oben schon Consent-Key und
+    // Version dran, der Wert ist nie exakt '0|' und der Callback bekaeme
+    // auch bei einer Ablehnung true.
+    window.mgmcConfig.consentCallback(!allOff);
   }
 }
 
